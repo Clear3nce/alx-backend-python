@@ -5,7 +5,7 @@ Unit tests for utils module
 import unittest
 from parameterized import parameterized
 from unittest.mock import patch, Mock
-from utils import access_nested_map, get_json
+from utils import access_nested_map, get_json, memoize
 
 
 class TestAccessNestedMap(unittest.TestCase):
@@ -48,19 +48,48 @@ class TestGetJson(unittest.TestCase):
         """
         Test that get_json returns the expected result without making actual HTTP calls
         """
-        # Create a mock response object
         mock_response = Mock()
         mock_response.json.return_value = test_payload
 
-        # Patch requests.get to return our mock response
         with patch('requests.get', return_value=mock_response) as mock_get:
             result = get_json(test_url)
-            
-            # Verify requests.get was called exactly once with test_url
             mock_get.assert_called_once_with(test_url)
-            
-            # Verify the result matches test_payload
             self.assertEqual(result, test_payload)
+
+
+class TestMemoize(unittest.TestCase):
+    """
+    Test class for memoize decorator
+    """
+    def test_memoize(self):
+        """
+        Test that memoize decorator works correctly
+        """
+        class TestClass:
+            """
+            Test class for memoization
+            """
+            def a_method(self):
+                return 42
+
+            @memoize
+            def a_property(self):
+                return self.a_method()
+
+        with patch.object(TestClass, 'a_method', return_value=42) as mock_method:
+            test_instance = TestClass()
+            
+            # First call
+            result1 = test_instance.a_property
+            # Second call
+            result2 = test_instance.a_property
+            
+            # Both calls should return 42
+            self.assertEqual(result1, 42)
+            self.assertEqual(result2, 42)
+            
+            # a_method should only be called once
+            mock_method.assert_called_once()
 
 
 if __name__ == '__main__':
