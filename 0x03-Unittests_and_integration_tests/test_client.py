@@ -8,6 +8,7 @@ from client import GithubOrgClient
 
 class TestGithubOrgClient(unittest.TestCase):
     """Test class for GithubOrgClient"""
+
     @parameterized.expand([
         ("google",),
         ("abc",),
@@ -31,8 +32,8 @@ class TestGithubOrgClient(unittest.TestCase):
         test_payload = {"repos_url": "https://api.github.com/orgs/test/repos"}
 
         with patch('client.GithubOrgClient.org',
-                   new_callable=PropertyMock,
-                   return_value=test_payload) as mock_org:
+                 new_callable=PropertyMock,
+                 return_value=test_payload) as mock_org:
             client = GithubOrgClient("test")
             result = client._public_repos_url
 
@@ -50,14 +51,24 @@ class TestGithubOrgClient(unittest.TestCase):
 
         test_url = "https://api.github.com/orgs/test/repos"
         with patch('client.GithubOrgClient._public_repos_url',
-                   new_callable=PropertyMock,
-                   return_value=test_url) as mock_url:
+                 new_callable=PropertyMock,
+                 return_value=test_url) as mock_url:
             client = GithubOrgClient("test")
             result = client.public_repos()
 
             self.assertEqual(result, ["repo1", "repo2"])
             mock_get_json.assert_called_once_with(test_url)
             mock_url.assert_called_once()
+
+    @parameterized.expand([
+        ({"license": {"key": "my_license"}}, "my_license", True),
+        ({"license": {"key": "other_license"}}, "my_license", False),
+    ])
+    def test_has_license(self, repo, license_key, expected):
+        """Test that has_license returns the correct boolean"""
+        client = GithubOrgClient("test")
+        result = client.has_license(repo, license_key)
+        self.assertEqual(result, expected)
 
 
 if __name__ == '__main__':
