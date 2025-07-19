@@ -1,4 +1,4 @@
-# Create your models here.
+import uuid
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.utils.translation import gettext_lazy as _
@@ -6,8 +6,30 @@ from django.utils.translation import gettext_lazy as _
 class User(AbstractUser):
     """
     Custom user model extending Django's AbstractUser.
-    Add additional fields here that aren't included in the default User model.
     """
+    user_id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False
+    )
+    email = models.EmailField(
+        _('email address'),
+        unique=True
+    )
+    password = models.CharField(
+        _('password'),
+        max_length=128
+    )
+    first_name = models.CharField(
+        _('first name'),
+        max_length=150,
+        blank=True
+    )
+    last_name = models.CharField(
+        _('last name'),
+        max_length=150,
+        blank=True
+    )
     phone_number = models.CharField(
         _('phone number'),
         max_length=20,
@@ -44,6 +66,11 @@ class Conversation(models.Model):
     """
     Model representing a conversation between users.
     """
+    conversation_id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False
+    )
     participants = models.ManyToManyField(
         User,
         related_name='conversations',
@@ -59,7 +86,7 @@ class Conversation(models.Model):
     )
 
     def __str__(self):
-        return f"Conversation {self.id}"
+        return f"Conversation {self.conversation_id}"
 
     class Meta:
         verbose_name = _('conversation')
@@ -71,6 +98,11 @@ class Message(models.Model):
     """
     Model representing a message in a conversation.
     """
+    message_id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False
+    )
     conversation = models.ForeignKey(
         Conversation,
         related_name='messages',
@@ -83,11 +115,11 @@ class Message(models.Model):
         on_delete=models.CASCADE,
         verbose_name=_('sender')
     )
-    content = models.TextField(
-        _('content')
+    message_body = models.TextField(
+        _('message body')
     )
-    timestamp = models.DateTimeField(
-        _('timestamp'),
+    sent_at = models.DateTimeField(
+        _('sent at'),
         auto_now_add=True
     )
     read = models.BooleanField(
@@ -96,9 +128,9 @@ class Message(models.Model):
     )
 
     def __str__(self):
-        return f"Message from {self.sender} in {self.conversation}"
+        return f"Message {self.message_id} from {self.sender}"
 
     class Meta:
         verbose_name = _('message')
         verbose_name_plural = _('messages')
-        ordering = ['timestamp']
+        ordering = ['sent_at']
